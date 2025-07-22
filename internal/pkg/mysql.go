@@ -1,22 +1,22 @@
 package pkg
 
 import (
-	"database/sql"
 	"fmt"
 	"sync"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
 var (
 	mysqlOnce sync.Once
-	mysqlDB   *sql.DB
+	mysqlDB   *gorm.DB
 	mysqlErr  error
 )
 
-// GetMySQL 返回全局 MySQL 连接
-func GetMySQL() (*sql.DB, error) {
+// GetDB 返回全局 GORM MySQL 连接
+func GetDB() (*gorm.DB, error) {
 	mysqlOnce.Do(func() {
 		host := viper.GetString("mysql.host")
 		port := viper.GetInt("mysql.port")
@@ -26,12 +26,7 @@ func GetMySQL() (*sql.DB, error) {
 
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true&charset=utf8mb4&loc=Local",
 			user, password, host, port, dbname)
-		mysqlDB, mysqlErr = sql.Open("mysql", dsn)
-		if mysqlErr != nil {
-			return
-		}
-		// 连接测试
-		mysqlErr = mysqlDB.Ping()
+		mysqlDB, mysqlErr = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	})
 	return mysqlDB, mysqlErr
 }
